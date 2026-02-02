@@ -22,6 +22,12 @@ function App() {
     setCurrentView('todo')
   }
 
+  const handleRegisterSuccess = (username) => {
+    localStorage.setItem('loggedInUser', username)
+    setCurrentUser(username)
+    setCurrentView('todo')
+  }
+
   const handleLogout = () => {
     logout()
     setCurrentUser(null)
@@ -34,7 +40,7 @@ function App() {
   return (
     <Container>
       {currentView === 'register' && (
-        <Register onLoginClick={switchToLogin} onRegisterSuccess={switchToLogin} />
+        <Register onLoginClick={switchToLogin} onRegisterSuccess={handleRegisterSuccess} />
       )}
       
       {currentView === 'login' && (

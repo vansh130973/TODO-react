@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { registerUser } from '../../utils/auth'
+import { registerUser, validatePassword } from '../../utils/auth'
 
 function Register({ onLoginClick, onRegisterSuccess }) {
   const [formData, setFormData] = useState({
@@ -8,6 +8,7 @@ function Register({ onLoginClick, onRegisterSuccess }) {
     confirmPassword: ''
   })
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
     setFormData({
@@ -16,7 +17,7 @@ function Register({ onLoginClick, onRegisterSuccess }) {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
@@ -25,11 +26,18 @@ function Register({ onLoginClick, onRegisterSuccess }) {
       return
     }
 
-    const result = registerUser(formData.username, formData.password)
+    const pwValidation = validatePassword(formData.password)
+    if (!pwValidation.valid) {
+      setError(pwValidation.message)
+      return
+    }
+
+    setLoading(true)
+    const result = await registerUser(formData.username, formData.password)
+    setLoading(false)
     
     if (result.success) {
-      alert(result.message)
-      onRegisterSuccess()
+      onRegisterSuccess(formData.username)
       setFormData({ username: '', password: '', confirmPassword: '' })
     } else {
       setError(result.message)
@@ -61,6 +69,9 @@ function Register({ onLoginClick, onRegisterSuccess }) {
               <label htmlFor="password" className="form-label">
                 Password <span className="text-danger">*</span>
               </label>
+              <small className="text-muted d-block mb-1">
+                8+ chars, 1 uppercase, 1 number, 1 special character
+              </small>
               <input
                 type="password"
                 className="form-control"
@@ -89,8 +100,8 @@ function Register({ onLoginClick, onRegisterSuccess }) {
               <div className="alert alert-danger">{error}</div>
             )}
             
-            <button type="submit" className="btn btn-primary w-100">
-              Register
+            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+              {loading ? 'Registering...' : 'Register'}
             </button>
             
             <div className="text-center mt-3">

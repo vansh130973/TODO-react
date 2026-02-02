@@ -15,11 +15,11 @@ function Login({ onRegisterClick, onLoginSuccess }) {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
-    const result = loginUser(formData.username, formData.password)
+    const result = await loginUser(formData.username, formData.password)
     
     if (result.success) {
       onLoginSuccess(formData.username)
