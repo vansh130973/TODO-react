@@ -1,29 +1,26 @@
 import { useState, useEffect } from 'react'
-import TodoForm from './TodoForm'
 import TodoItem from './TodoItem'
 import { getUserTodos, saveUserTodos } from '../../utils/auth'
+import { nowUtc } from '../../utils/dateUtils'
 
-function TodoList({ currentUser, onLogout }) {
+function TodoList({ currentUser, refreshKey, dateFormat }) {
   const [todos, setTodos] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [editText, setEditText] = useState('')
 
   useEffect(() => {
     const userTodos = getUserTodos(currentUser)
-    setTodos(userTodos)
-  }, [currentUser])
-
-  const addTodo = (text) => {
-    const newTodo = {
-      id: Date.now(),
-      text,
-      date: new Date().toLocaleString()
-    }
-    
-    const updatedTodos = [...todos, newTodo]
-    setTodos(updatedTodos)
-    saveUserTodos(currentUser, updatedTodos)
-  }
+    setTodos(userTodos.map(t => {
+      const { completedDate, ...rest } = t
+      return {
+        ...rest,
+        completed: t.completed ?? false,
+        createdDate: t.createdDate ?? t.date,
+        updatedDate: t.updatedDate ?? null,
+        targetCompleteDate: t.targetCompleteDate ?? null
+      }
+    }))
+  }, [currentUser, refreshKey])
 
   const deleteTodo = (id) => {
     const updatedTodos = todos.filter(todo => todo.id !== id)
@@ -38,11 +35,13 @@ function TodoList({ currentUser, onLogout }) {
 
   const saveEdit = (id) => {
     if (!editText.trim()) return
-    
+
     const updatedTodos = todos.map(todo =>
-      todo.id === id ? { ...todo, text: editText } : todo
+      todo.id === id
+        ? { ...todo, text: editText, updatedDate: nowUtc() }
+        : todo
     )
-    
+
     setTodos(updatedTodos)
     saveUserTodos(currentUser, updatedTodos)
     setEditingId(null)
@@ -54,40 +53,40 @@ function TodoList({ currentUser, onLogout }) {
     setEditText('')
   }
 
+  const toggleComplete = (id) => {
+    const updatedTodos = todos.map(todo =>
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    )
+    setTodos(updatedTodos)
+    saveUserTodos(currentUser, updatedTodos)
+  }
+
   return (
     <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3>My Todos</h3>
-        <button className="btn btn-danger btn-sm" onClick={onLogout}>
-          Logout
-        </button>
-      </div>
-      
-      <TodoForm onAddTodo={addTodo} />
-      
+      <h3 className="mb-3">My Todos</h3>
       <div className="table-responsive">
         <table className="table table-bordered align-middle">
           <thead className="table-dark">
             <tr>
-              <th>#</th>
-              <th>Date</th>
               <th>Todo</th>
+              <th>Created Date</th>
+              <th>Updated Date</th>
+              <th>Complete Date</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {todos.length === 0 ? (
               <tr>
-                <td colSpan="4" className="text-center text-muted">
+                <td colSpan="5" className="text-center text-muted">
                   No todos yet
                 </td>
               </tr>
             ) : (
-              todos.map((todo, index) => (
+              todos.map((todo) => (
                 <TodoItem
                   key={todo.id}
                   todo={todo}
-                  index={index}
                   isEditing={editingId === todo.id}
                   editText={editText}
                   onEditTextChange={setEditText}
@@ -95,6 +94,8 @@ function TodoList({ currentUser, onLogout }) {
                   onSaveEdit={saveEdit}
                   onCancelEdit={cancelEdit}
                   onDelete={deleteTodo}
+                  onToggleComplete={toggleComplete}
+                  dateFormat={dateFormat}
                 />
               ))
             )}

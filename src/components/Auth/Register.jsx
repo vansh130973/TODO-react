@@ -69,9 +69,6 @@ function Register({ onLoginClick, onRegisterSuccess }) {
               <label htmlFor="password" className="form-label">
                 Password <span className="text-danger">*</span>
               </label>
-              <small className="text-muted d-block mb-1">
-                8+ chars, 1 uppercase, 1 number, 1 special character
-              </small>
               <input
                 type="password"
                 className="form-control"
