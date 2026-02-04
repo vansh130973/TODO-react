@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { loginUser } from '../../utils/auth'
+import { useToast } from '../../context/useToast'
 
 function Login({ onRegisterClick, onLoginSuccess }) {
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   })
-  const [error, setError] = useState('')
+  const { showToast } = useToast()
 
   const handleChange = (e) => {
     setFormData({
@@ -17,15 +18,15 @@ function Login({ onRegisterClick, onLoginSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
 
     const result = await loginUser(formData.username, formData.password)
     
     if (result.success) {
+      showToast(result.message || 'Login successful', 'success')
       onLoginSuccess(formData.username)
       setFormData({ username: '', password: '' })
     } else {
-      setError(result.message)
+      showToast(result.message || 'Login failed', 'danger')
     }
   }
 
@@ -63,10 +64,6 @@ function Login({ onRegisterClick, onLoginSuccess }) {
                 required
               />
             </div>
-            
-            {error && (
-              <div className="alert alert-danger">{error}</div>
-            )}
             
             <button type="submit" className="btn btn-primary w-100">
               Login

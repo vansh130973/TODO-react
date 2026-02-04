@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useMemo } from 'react'
 import { getUserTodos } from '../../utils/auth'
 
 function Dashboard({ currentUser, refreshKey }) {
-  const [todos, setTodos] = useState([])
-
-  useEffect(() => {
+  const todos = useMemo(() => {
+    // refreshKey intentionally forces recompute when todos change
+    void refreshKey
     const userTodos = getUserTodos(currentUser)
-    setTodos(userTodos.map(t => ({ ...t, completed: t.completed ?? false })))
+    return userTodos.map(t => ({ ...t, completed: t.completed ?? false }))
   }, [currentUser, refreshKey])
 
   const total = todos.length

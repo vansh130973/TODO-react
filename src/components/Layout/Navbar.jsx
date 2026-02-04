@@ -6,12 +6,14 @@ function Navbar({ currentUser, onNavigate, onLogout, onTodoAdded, dateFormat, on
   const [showTodoPopup, setShowTodoPopup] = useState(false)
   const [todoText, setTodoText] = useState('')
   const [todoCompleteDate, setTodoCompleteDate] = useState('')
+  const [todoRemainderDate, setTodoRemainderDate] = useState('')
 
   const goTo = (view) => () => onNavigate(view)
 
   const handleOpenTodoPopup = () => {
     setTodoText('')
     setTodoCompleteDate('')
+    setTodoRemainderDate('')
     setShowTodoPopup(true)
   }
 
@@ -19,6 +21,7 @@ function Navbar({ currentUser, onNavigate, onLogout, onTodoAdded, dateFormat, on
     setShowTodoPopup(false)
     setTodoText('')
     setTodoCompleteDate('')
+    setTodoRemainderDate('')
   }
 
   const handleAddTodo = (e) => {
@@ -32,7 +35,8 @@ function Navbar({ currentUser, onNavigate, onLogout, onTodoAdded, dateFormat, on
       text: todoText.trim(),
       completed: false,
       createdDate: now,
-      targetCompleteDate: dateInputToUtc(todoCompleteDate)
+      targetCompleteDate: dateInputToUtc(todoCompleteDate),
+      remainderDate: dateInputToUtc(todoRemainderDate)
     }
     saveUserTodos(currentUser, [...todos, newTodo])
     handleCloseTodoPopup()
@@ -146,14 +150,24 @@ function Navbar({ currentUser, onNavigate, onLogout, onTodoAdded, dateFormat, on
                       autoFocus
                     />
                   </div>
-                  <div className="mb-0">
-                    <label htmlFor="todoCompleteDate" className="form-label">Todo Complete Date</label>
+                  <div className="mb-3">
+                    <label htmlFor="todoCompleteDate" className="form-label">Complete Date (UTC)</label>
                     <input
                       id="todoCompleteDate"
                       type="date"
                       className="form-control"
                       value={todoCompleteDate}
                       onChange={(e) => setTodoCompleteDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="mb-0">
+                    <label htmlFor="todoRemainderDate" className="form-label">Remainder Date (UTC)</label>
+                    <input
+                      id="todoRemainderDate"
+                      type="date"
+                      className="form-control"
+                      value={todoRemainderDate}
+                      onChange={(e) => setTodoRemainderDate(e.target.value)}
                     />
                   </div>
                 </div>

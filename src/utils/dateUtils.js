@@ -37,3 +37,22 @@ export function dateInputToUtc(dateInput) {
   const d = new Date(dateInput + 'T00:00:00.000Z')
   return Number.isNaN(d.getTime()) ? null : d.toISOString()
 }
+
+/**
+ * Convert UTC ISO string to YYYY-MM-DD for date input.
+ */
+export function utcToDateInput(utcDate) {
+  if (!utcDate) return ''
+  const d = new Date(utcDate)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * Check if a UTC date string has passed (is in the past).
+ */
+export function isDatePassed(utcDate) {
+  if (!utcDate) return false
+  const d = new Date(utcDate)
+  return !Number.isNaN(d.getTime()) && d.getTime() < Date.now()
+}

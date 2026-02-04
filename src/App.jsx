@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Container from './components/Layout/Container'
 import Navbar from './components/Layout/Navbar'
 import Sidebar from './components/Layout/Sidebar'
@@ -8,10 +8,13 @@ import TodoList from './components/Todo/TodoList'
 import Dashboard from './components/Dashboard/Dashboard'
 import { getCurrentUser, logout } from './utils/auth'
 import { DATE_FORMAT_STORAGE_KEY } from './utils/dateUtils'
+import { ToastProvider } from './context/ToastContext'
+import GlobalToast from './components/Common/GlobalToast'
 
 function App() {
-  const [currentView, setCurrentView] = useState('register')
-  const [currentUser, setCurrentUser] = useState(null)
+  const initialUser = getCurrentUser()
+  const [currentView, setCurrentView] = useState(initialUser ? 'todo' : 'register')
+  const [currentUser, setCurrentUser] = useState(initialUser)
   const [loggedInView, setLoggedInView] = useState('dashboard')
   const [todoRefreshKey, setTodoRefreshKey] = useState(0)
   const [dateFormat, setDateFormat] = useState(() => {
@@ -22,14 +25,6 @@ function App() {
     setDateFormat(format)
     localStorage.setItem(DATE_FORMAT_STORAGE_KEY, format)
   }
-
-  useEffect(() => {
-    const user = getCurrentUser()
-    if (user) {
-      setCurrentUser(user)
-      setCurrentView('todo')
-    }
-  }, [])
 
   const handleLoginSuccess = (username) => {
     setCurrentUser(username)
@@ -54,45 +49,52 @@ function App() {
   const isLoggedIn = !!currentUser
 
   return (
-    <div className="min-vh-100 bg-light">
-      <Navbar
-        currentUser={currentUser}
-        onNavigate={setCurrentView}
-        onLogout={handleLogout}
-        onTodoAdded={() => setTodoRefreshKey((k) => k + 1)}
-        dateFormat={dateFormat}
-        onDateFormatChange={handleDateFormatChange}
-      />
-      {isLoggedIn && currentView === 'todo' ? (
-        <div className="d-flex">
-          <Sidebar activeView={loggedInView} onNavigate={setLoggedInView} />
-          <main className="flex-grow-1 bg-light">
-            {loggedInView === 'dashboard' && (
-              <Dashboard currentUser={currentUser} refreshKey={todoRefreshKey} />
+    <ToastProvider>
+      <div className="min-vh-100 bg-light">
+        <GlobalToast />
+        <Navbar
+          currentUser={currentUser}
+          onNavigate={setCurrentView}
+          onLogout={handleLogout}
+          onTodoAdded={() => setTodoRefreshKey((k) => k + 1)}
+          dateFormat={dateFormat}
+          onDateFormatChange={handleDateFormatChange}
+        />
+        {isLoggedIn && currentView === 'todo' ? (
+          <div className="d-flex">
+            <Sidebar activeView={loggedInView} onNavigate={setLoggedInView} />
+            <main className="flex-grow-1 bg-light">
+              {loggedInView === 'dashboard' && (
+                <Dashboard currentUser={currentUser} refreshKey={todoRefreshKey} />
+              )}
+              {loggedInView === 'list' && (
+                <Container>
+                  <TodoList
+                    key={`${currentUser}-${todoRefreshKey}`}
+                    currentUser={currentUser}
+                    dateFormat={dateFormat}
+                  />
+                </Container>
+              )}
+            </main>
+          </div>
+        ) : (
+          <Container>
+            {currentView === 'register' && (
+              <Register onLoginClick={switchToLogin} onRegisterSuccess={handleRegisterSuccess} />
             )}
-            {loggedInView === 'list' && (
-              <Container>
-                <TodoList currentUser={currentUser} refreshKey={todoRefreshKey} dateFormat={dateFormat} />
-              </Container>
+            {currentView === 'login' && (
+              <Login onRegisterClick={switchToRegister} onLoginSuccess={handleLoginSuccess} />
             )}
-          </main>
-        </div>
-      ) : (
-        <Container>
-          {currentView === 'register' && (
-            <Register onLoginClick={switchToLogin} onRegisterSuccess={handleRegisterSuccess} />
-          )}
-          {currentView === 'login' && (
-            <Login onRegisterClick={switchToRegister} onLoginSuccess={handleLoginSuccess} />
-          )}
-          {currentView === 'todo' && !currentUser && (
-            <div className="container py-5 text-center text-muted">
-              Log in to view your todos.
-            </div>
-          )}
-        </Container>
-      )}
-    </div>
+            {currentView === 'todo' && !currentUser && (
+              <div className="container py-5 text-center text-muted">
+                Log in to view your todos.
+              </div>
+            )}
+          </Container>
+        )}
+      </div>
+    </ToastProvider>
   )
 }
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { registerUser, validatePassword } from '../../utils/auth'
+import { useToast } from '../../context/useToast'
 
 function Register({ onLoginClick, onRegisterSuccess }) {
   const [formData, setFormData] = useState({
@@ -7,8 +8,8 @@ function Register({ onLoginClick, onRegisterSuccess }) {
     password: '',
     confirmPassword: ''
   })
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const { showToast } = useToast()
 
   const handleChange = (e) => {
     setFormData({
@@ -19,16 +20,15 @@ function Register({ onLoginClick, onRegisterSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+      showToast('Passwords do not match', 'danger')
       return
     }
 
     const pwValidation = validatePassword(formData.password)
     if (!pwValidation.valid) {
-      setError(pwValidation.message)
+      showToast(pwValidation.message, 'danger')
       return
     }
 
@@ -37,10 +37,11 @@ function Register({ onLoginClick, onRegisterSuccess }) {
     setLoading(false)
     
     if (result.success) {
+      showToast(result.message || 'Registration successful', 'success')
       onRegisterSuccess(formData.username)
       setFormData({ username: '', password: '', confirmPassword: '' })
     } else {
-      setError(result.message)
+      showToast(result.message || 'Registration failed', 'danger')
     }
   }
 
@@ -92,10 +93,6 @@ function Register({ onLoginClick, onRegisterSuccess }) {
                 required
               />
             </div>
-            
-            {error && (
-              <div className="alert alert-danger">{error}</div>
-            )}
             
             <button type="submit" className="btn btn-primary w-100" disabled={loading}>
               {loading ? 'Registering...' : 'Register'}
