@@ -52,9 +52,9 @@ function Navbar({ currentUser, onNavigate, onLogout, onTodoAdded, dateFormat, on
             className="navbar-brand btn btn-link text-white text-decoration-none fw-bold"
             onClick={goTo('todo')}
           >
-            TODO
+          <span className="text-white">My</span><span className="text-warning">ToDoS</span>
           </button>
-          <div className="ms-auto d-flex align-items-center gap-2">
+          <div className="ms-auto d-flex align-items-center gap-3">
             {onDateFormatChange && (
               <div className="d-flex align-items-center gap-2">
                 <span className="text-white small">12 hrs</span>
