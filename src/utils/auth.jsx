@@ -3,17 +3,15 @@ import bcrypt from 'bcryptjs'
 
 // Password rules: 1 uppercase, 1 special char, 1 number, min 8 characters
 export const validatePassword = (password) => {
-  if (password.length < 8) {
-    return { valid: false, message: 'Password must be at least 8 characters' }
-  }
-  if (!/[A-Z]/.test(password)) {
-    return { valid: false, message: 'Password must contain at least 1 uppercase letter' }
-  }
-  if (!/[0-9]/.test(password)) {
-    return { valid: false, message: 'Password must contain at least 1 number' }
-  }
-  if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
-    return { valid: false, message: 'Password must contain at least 1 special character' }
+  const regex =
+    /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/
+
+  if (!regex.test(password)) {
+    return {
+      valid: false,
+      message:
+        'Password must contain at least 1 uppercase letter, 1 number, 1 special character, and be minimum 8 characters long',
+    }
   }
   return { valid: true }
 }
@@ -38,15 +36,30 @@ export const registerUser = async (username, password) => {
 }
 
 export const loginUser = async (username, password) => {
+  if (!username || !password) {
+    return {
+      success: false,
+      message: 'Username and password are required',
+    }
+  }
+
   const users = JSON.parse(localStorage.getItem('users') || '{}')
-  
+
   if (!users[username]) {
-    return { success: false, type: 'username', message: 'Username not found.' }
+    return {
+      success: false,
+      type: 'username',
+      message: 'Username not found',
+    }
   }
 
   const isMatch = await bcrypt.compare(password, users[username].password)
   if (!isMatch) {
-    return { success: false, type: 'password', message: 'Incorrect password. Please try again.' }
+    return {
+      success: false,
+      type: 'password',
+      message: 'Incorrect password',
+    }
   }
 
   localStorage.setItem('loggedInUser', username)

@@ -26,27 +26,39 @@ function Register({ onLoginClick, onRegisterSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (formData.password !== formData.confirmPassword) {
+    const { username, password, confirmPassword } = formData
+
+    if (!username || !password || !confirmPassword) {
+      showToast('All fields are required', 'danger')
+      return
+    }
+
+    if (username.trim().length < 3) {
+      showToast('Username must be at least 3 characters', 'danger')
+      return
+    }
+
+    if (password !== confirmPassword) {
       showToast('Passwords do not match', 'danger')
       return
     }
 
-    const pwValidation = validatePassword(formData.password)
+    const pwValidation = validatePassword(password)
     if (!pwValidation.valid) {
       showToast(pwValidation.message, 'danger')
       return
     }
 
     setLoading(true)
-    const result = await registerUser(formData.username, formData.password)
+    const result = await registerUser(username.trim(), password)
     setLoading(false)
 
     if (result.success) {
-      showToast(result.message || 'Registration successful', 'success')
-      onRegisterSuccess(formData.username)
+      showToast(result.message, 'success')
+      onRegisterSuccess(username.trim())
       setFormData({ username: '', password: '', confirmPassword: '' })
     } else {
-      showToast(result.message || 'Registration failed', 'danger')
+      showToast(result.message, 'danger')
     }
   }
 
@@ -77,7 +89,6 @@ function Register({ onLoginClick, onRegisterSuccess }) {
                   id="username"
                   value={formData.username}
                   onChange={handleChange}
-                  required
                 />
               </div>
 
@@ -91,7 +102,6 @@ function Register({ onLoginClick, onRegisterSuccess }) {
                   id="password"
                   value={formData.password}
                   onChange={handleChange}
-                  required
                 />
               </div>
 
@@ -105,7 +115,6 @@ function Register({ onLoginClick, onRegisterSuccess }) {
                   id="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  required
                 />
               </div>
 

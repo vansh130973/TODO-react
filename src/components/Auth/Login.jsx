@@ -24,14 +24,21 @@ function Login({ onRegisterClick, onLoginSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    const result = await loginUser(formData.username, formData.password)
+    const { username, password } = formData
+
+    if (!username || !password) {
+      showToast('Username and password are required', 'danger')
+      return
+    }
+
+    const result = await loginUser(username.trim(), password)
 
     if (result.success) {
-      showToast(result.message || 'Login successful', 'success')
-      onLoginSuccess(formData.username)
+      showToast(result.message, 'success')
+      onLoginSuccess(username.trim())
       setFormData({ username: '', password: '' })
     } else {
-      showToast(result.message || 'Login failed', 'danger')
+      showToast(result.message, 'danger')
     }
   }
 
@@ -63,7 +70,6 @@ function Login({ onRegisterClick, onLoginSuccess }) {
                   id="username"
                   value={formData.username}
                   onChange={handleChange}
-                  required
                 />
               </div>
 
@@ -77,7 +83,6 @@ function Login({ onRegisterClick, onLoginSuccess }) {
                   id="password"
                   value={formData.password}
                   onChange={handleChange}
-                  required
                 />
               </div>
 
