@@ -37,38 +37,46 @@ export function isDatePassed(utcDate) {
 }
 
 /**
- * Get current UTC time formatted for datetime-local input (YYYY-MM-DDTHH:mm)
+ * Get current UTC time formatted for datetime-local input (in LOCAL timezone)
+ * datetime-local inputs work in the user's local timezone
  */
 export function utcNowForInput() {
   const now = new Date()
-  const y = now.getUTCFullYear()
-  const m = String(now.getUTCMonth() + 1).padStart(2, '0')
-  const d = String(now.getUTCDate()).padStart(2, '0')
-  const h = String(now.getUTCHours()).padStart(2, '0')
-  const min = String(now.getUTCMinutes()).padStart(2, '0')
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const d = String(now.getDate()).padStart(2, '0')
+  const h = String(now.getHours()).padStart(2, '0')
+  const min = String(now.getMinutes()).padStart(2, '0')
   return `${y}-${m}-${d}T${h}:${min}`
 }
 
 /**
- * Convert datetime-local input value to UTC Date object
+ * Convert datetime-local input value (which is in local time) to UTC Date object
+ * The input value is in format YYYY-MM-DDTHH:mm and represents LOCAL time
  */
 export function toUtcDate(value) {
-  return new Date(value + ':00Z')
+  // Create a Date object from the local datetime string
+  // This correctly interprets it as local time
+  return new Date(value)
 }
 
 /**
- * Convert UTC ISO string to datetime-local input format (YYYY-MM-DDTHH:mm)
+ * Convert UTC ISO string to datetime-local input format (in LOCAL timezone)
+ * datetime-local inputs expect local time, not UTC
  */
 export function utcToDateTimeInput(utcDate) {
   if (!utcDate) return ''
   try {
     const d = new Date(utcDate)
     if (Number.isNaN(d.getTime())) return ''
-    const y = d.getUTCFullYear()
-    const m = String(d.getUTCMonth() + 1).padStart(2, '0')
-    const day = String(d.getUTCDate()).padStart(2, '0')
-    const h = String(d.getUTCHours()).padStart(2, '0')
-    const min = String(d.getUTCMinutes()).padStart(2, '0')
+    
+    // Get local time components
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    const h = String(d.getHours()).padStart(2, '0')
+    const min = String(d.getMinutes()).padStart(2, '0')
+    
     return `${y}-${m}-${day}T${h}:${min}`
   } catch {
     return ''
