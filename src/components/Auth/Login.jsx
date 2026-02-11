@@ -4,10 +4,8 @@ import { useToast } from '../../context/useToast'
 import { loginImageEncrypted } from '../../utils/encryptedImage'
 
 function Login({ onRegisterClick, onLoginSuccess }) {
-  const decryptImage = (base64) => {
-    return `data:image/png;base64,${base64}`
-  }
-  const imageSrc = decryptImage(loginImageEncrypted)
+  const imageSrc = `data:image/png;base64,${loginImageEncrypted}`
+  
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -54,7 +52,6 @@ function Login({ onRegisterClick, onLoginSuccess }) {
           />
         </div>
 
-        {/* Right Form */}
         <div className="col-6 p-0 d-flex align-items-center">
           <div className="w-75 mx-auto">
             <h3 className="mb-4">Login</h3>
@@ -105,7 +102,6 @@ function Login({ onRegisterClick, onLoginSuccess }) {
             </form>
           </div>
         </div>
-
       </div>
     </div>
   )

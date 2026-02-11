@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import TodoItem from './TodoItem'
 import { getUserTodos, saveUserTodos } from '../../utils/auth'
-import { nowUtc, dateInputToUtc, utcToDateInput } from '../../utils/dateUtils'
+import { useToast } from '../../context/useToast'
+import { nowUtc, utcNowForInput, toUtcDate, utcToDateTimeInput } from '../../utils/dateUtils'
 
 const FILTER_ALL = 'all'
 const FILTER_UPCOMING = 'upcoming'
@@ -25,6 +26,7 @@ function completeTimeOrInfinity(todo) {
 }
 
 function TodoList({ currentUser, dateFormat }) {
+  const { showToast } = useToast()
   const [todos, setTodos] = useState(() => normalizeTodos(getUserTodos(currentUser)))
   const [filter, setFilter] = useState(FILTER_ALL)
   const [showEditPopup, setShowEditPopup] = useState(false)
@@ -32,6 +34,8 @@ function TodoList({ currentUser, dateFormat }) {
   const [editText, setEditText] = useState('')
   const [editCompleteDate, setEditCompleteDate] = useState('')
   const [editRemainderDate, setEditRemainderDate] = useState('')
+
+  const utcMin = utcNowForInput()
 
   const deleteTodo = (id) => {
     const updatedTodos = todos.filter(todo => todo.id !== id)
@@ -42,8 +46,8 @@ function TodoList({ currentUser, dateFormat }) {
   const openEditPopup = (todo) => {
     setEditTodo(todo)
     setEditText(todo.text)
-    setEditCompleteDate(utcToDateInput(todo.targetCompleteDate))
-    setEditRemainderDate(utcToDateInput(todo.remainderDate))
+    setEditCompleteDate(utcToDateTimeInput(todo.targetCompleteDate))
+    setEditRemainderDate(utcToDateTimeInput(todo.remainderDate))
     setShowEditPopup(true)
   }
 
@@ -57,15 +61,43 @@ function TodoList({ currentUser, dateFormat }) {
 
   const saveEdit = (e) => {
     e.preventDefault()
-    if (!editText.trim() || !editTodo) return
+    
+    if (!editText.trim()) {
+      showToast('Todo text is required', 'danger')
+      return
+    }
+
+    if (!editCompleteDate || !editRemainderDate) {
+      showToast('Both Complete Date and Remainder Date are required', 'danger')
+      return
+    }
+
+    const currentUtc = new Date()
+    const completeUtc = toUtcDate(editCompleteDate)
+    const remainderUtc = toUtcDate(editRemainderDate)
+
+    if (completeUtc < currentUtc) {
+      showToast('Complete date/time cannot be in the past', 'danger')
+      return
+    }
+
+    if (remainderUtc < currentUtc) {
+      showToast('Remainder date/time cannot be in the past', 'danger')
+      return
+    }
+
+    if (remainderUtc > completeUtc) {
+      showToast('Remainder date/time must be on or before the complete date/time', 'danger')
+      return
+    }
 
     const updatedTodos = todos.map(todo =>
       todo.id === editTodo.id
         ? {
             ...todo,
             text: editText.trim(),
-            targetCompleteDate: dateInputToUtc(editCompleteDate),
-            remainderDate: dateInputToUtc(editRemainderDate),
+            targetCompleteDate: completeUtc.toISOString(),
+            remainderDate: remainderUtc.toISOString(),
             updatedDate: nowUtc()
           }
         : todo
@@ -73,6 +105,7 @@ function TodoList({ currentUser, dateFormat }) {
 
     setTodos(updatedTodos)
     saveUserTodos(currentUser, updatedTodos)
+    showToast('Todo updated successfully', 'success')
     closeEditPopup()
   }
 
@@ -193,23 +226,36 @@ function TodoList({ currentUser, dateFormat }) {
                       autoFocus
                     />
                   </div>
+                  
                   <div className="mb-3">
-                    <label htmlFor="editCompleteDate" className="form-label">Complete Date (UTC)</label>
+                    <label htmlFor="editCompleteDate" className="form-label">
+                      Complete Date (UTC)
+                    </label>
                     <input
                       id="editCompleteDate"
-                      type="date"
+                      type="datetime-local"
                       className="form-control"
                       value={editCompleteDate}
-                      onChange={(e) => setEditCompleteDate(e.target.value)}
+                      min={utcMin}
+                      onChange={(e) => {
+                        setEditCompleteDate(e.target.value)
+                        if (editRemainderDate && editRemainderDate > e.target.value) {
+                          setEditRemainderDate('')
+                        }
+                      }}
                     />
                   </div>
+                  
                   <div className="mb-0">
-                    <label htmlFor="editRemainderDate" className="form-label">Remainder Date (UTC)</label>
+                    <label htmlFor="editRemainderDate" className="form-label">
+                      Remainder Date (UTC)
+                    </label>
                     <input
                       id="editRemainderDate"
-                      type="date"
+                      type="datetime-local"
                       className="form-control"
                       value={editRemainderDate}
+                      min={utcMin}
                       onChange={(e) => setEditRemainderDate(e.target.value)}
                     />
                   </div>

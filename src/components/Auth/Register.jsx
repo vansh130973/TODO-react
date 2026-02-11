@@ -4,10 +4,8 @@ import { useToast } from '../../context/useToast'
 import { registerImageEncrypted } from '../../utils/encryptedImage'
 
 function Register({ onLoginClick, onRegisterSuccess }) {
-  const decryptImage = (base64) => {
-    return `data:image/png;base64,${base64}`
-  }
-  const imageSrc = decryptImage(registerImageEncrypted)
+  const imageSrc = `data:image/png;base64,${registerImageEncrypted}`
+  
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -141,7 +139,6 @@ function Register({ onLoginClick, onRegisterSuccess }) {
             </form>
           </div>
         </div>
-
       </div>
     </div>
   )

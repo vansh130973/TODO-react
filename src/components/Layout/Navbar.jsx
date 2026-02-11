@@ -1,12 +1,24 @@
 import { useState } from 'react'
 import { getUserTodos, saveUserTodos } from '../../utils/auth'
-import { nowUtc, dateInputToUtc } from '../../utils/dateUtils'
+import { useToast } from '../../context/useToast'
+import { utcNowForInput, toUtcDate } from '../../utils/dateUtils'
 
-function Navbar({ currentUser, onNavigate, onLogout, onTodoAdded, dateFormat, onDateFormatChange }) {
+function Navbar({
+  currentUser,
+  onNavigate,
+  onLogout,
+  onTodoAdded,
+  dateFormat,
+  onDateFormatChange
+}) {
+  const { showToast } = useToast()
+
   const [showTodoPopup, setShowTodoPopup] = useState(false)
   const [todoText, setTodoText] = useState('')
   const [todoCompleteDate, setTodoCompleteDate] = useState('')
   const [todoRemainderDate, setTodoRemainderDate] = useState('')
+
+  const utcMin = utcNowForInput()
 
   const goTo = (view) => () => onNavigate(view)
 
@@ -26,19 +38,45 @@ function Navbar({ currentUser, onNavigate, onLogout, onTodoAdded, dateFormat, on
 
   const handleAddTodo = (e) => {
     e.preventDefault()
-    if (!todoText.trim() || !currentUser) return
+
+    if (!todoText.trim() || !todoCompleteDate || !todoRemainderDate) {
+      showToast('All fields are required', 'danger')
+      return
+    }
+
+    const createdUtc = new Date()
+    const completeUtc = toUtcDate(todoCompleteDate)
+    const remainderUtc = toUtcDate(todoRemainderDate)
+
+    if (completeUtc < createdUtc) {
+      showToast('Complete date/time cannot be in the past', 'danger')
+      return
+    }
+
+    if (remainderUtc < createdUtc) {
+      showToast('Remainder date/time cannot be in the past', 'danger')
+      return
+    }
+
+    if (remainderUtc > completeUtc) {
+      showToast('Remainder date/time must be on or before the complete date/time', 'danger')
+      return
+    }
 
     const todos = getUserTodos(currentUser)
-    const now = nowUtc()
+
     const newTodo = {
       id: Date.now(),
       text: todoText.trim(),
       completed: false,
-      createdDate: now,
-      targetCompleteDate: dateInputToUtc(todoCompleteDate),
-      remainderDate: dateInputToUtc(todoRemainderDate)
+      createdDate: createdUtc.toISOString(),
+      targetCompleteDate: completeUtc.toISOString(),
+      remainderDate: remainderUtc.toISOString()
     }
+
     saveUserTodos(currentUser, [...todos, newTodo])
+
+    showToast('Todo added successfully', 'success')
     handleCloseTodoPopup()
     onTodoAdded?.()
   }
@@ -52,8 +90,10 @@ function Navbar({ currentUser, onNavigate, onLogout, onTodoAdded, dateFormat, on
             className="navbar-brand btn btn-link text-white text-decoration-none fw-bold"
             onClick={goTo('todo')}
           >
-          <span className="text-white">My</span><span className="text-warning">ToDoS</span>
+            <span className="text-white">My</span>
+            <span className="text-warning">ToDoS</span>
           </button>
+
           <div className="ms-auto d-flex align-items-center gap-3">
             {onDateFormatChange && (
               <div className="d-flex align-items-center gap-2">
@@ -62,121 +102,88 @@ function Navbar({ currentUser, onNavigate, onLogout, onTodoAdded, dateFormat, on
                   <input
                     className="form-check-input"
                     type="checkbox"
-                    id="dateFormatToggle"
                     checked={dateFormat === '24h'}
                     onChange={(e) => onDateFormatChange(e.target.checked ? '24h' : '12h')}
-                    aria-label="12 or 24 hour format"
                   />
                 </div>
                 <span className="text-white small">24 hrs</span>
               </div>
             )}
+
             {currentUser ? (
               <>
                 <button
-                  type="button"
-                  className="btn btn-outline-light btn-sm"
+                  className="btn btn-light btn-sm"
                   onClick={handleOpenTodoPopup}
                 >
                   Add Todo
                 </button>
-              <button
-                type="button"
-                className="btn btn-outline-danger btn-sm"
-                onClick={onLogout}
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="btn btn-outline-light btn-sm"
-                onClick={goTo('login')}
-              >
-                Login
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline-light btn-sm"
-                onClick={goTo('register')}
-              >
-                Register
-              </button>
-            </>
-          )}
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={onLogout}
+                >
+                  Logout
+                </button>
+              </>
+            ) : null}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
 
-      {/* Todo popup modal */}
       {showTodoPopup && (
         <div
-            className="modal show d-block"
-            tabIndex={-1}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              zIndex: 1050
-            }}
-          >
+          className="modal show d-block"
+          tabIndex={-1}
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+        >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Add Todo</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  aria-label="Close"
-                  onClick={handleCloseTodoPopup}
-                />
+                <button className="btn-close" onClick={handleCloseTodoPopup} />
               </div>
+
               <form onSubmit={handleAddTodo}>
                 <div className="modal-body">
                   <div className="mb-3">
-                    <label htmlFor="todoText" className="form-label">Todo</label>
+                    <label className="form-label">Todo</label>
                     <input
-                      id="todoText"
-                      type="text"
                       className="form-control"
-                      placeholder="Enter todo..."
                       value={todoText}
                       onChange={(e) => setTodoText(e.target.value)}
-                      autoFocus
                     />
                   </div>
+
                   <div className="mb-3">
-                    <label htmlFor="todoCompleteDate" className="form-label">Complete Date (UTC)</label>
+                    <label className="form-label">Complete Date (UTC)</label>
                     <input
-                      id="todoCompleteDate"
-                      type="date"
+                      type="datetime-local"
                       className="form-control"
                       value={todoCompleteDate}
-                      onChange={(e) => setTodoCompleteDate(e.target.value)}
+                      min={utcMin}
+                      onChange={(e) => {
+                        setTodoCompleteDate(e.target.value)
+                        if (todoRemainderDate && todoRemainderDate > e.target.value) {
+                          setTodoRemainderDate('')
+                        }
+                      }}
                     />
                   </div>
-                  <div className="mb-0">
-                    <label htmlFor="todoRemainderDate" className="form-label">Remainder Date (UTC)</label>
+
+                  <div>
+                    <label className="form-label">Remainder Date (UTC)</label>
                     <input
-                      id="todoRemainderDate"
-                      type="date"
+                      type="datetime-local"
                       className="form-control"
                       value={todoRemainderDate}
+                      min={utcMin}
                       onChange={(e) => setTodoRemainderDate(e.target.value)}
                     />
                   </div>
                 </div>
+
                 <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={handleCloseTodoPopup}
-                  >
+                  <button type="button" className="btn btn-secondary" onClick={handleCloseTodoPopup}>
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">

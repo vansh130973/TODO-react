@@ -1,35 +1,31 @@
 function Sidebar({ activeView, onNavigate }) {
-  const goTo = (view) => () => onNavigate(view);
+  const menuItems = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'list', label: 'List' }
+  ]
 
   return (
     <aside
       className="sidebar bg-white border-end shadow-sm"
-      style={{ minWidth: "220px" }}
+      style={{ minWidth: '220px' }}
     >
       <nav className="nav flex-column p-3 gap-1">
-        <button
-          type="button"
-          className={`nav-link text-start border-0 py-2 px-3 d-flex align-items-center gap-2 ${
-            activeView === "dashboard" ? "text-white" : "text-dark"
-          }`}
-          style={ activeView === "dashboard" ? { backgroundColor: "#0077b6" } : {} }
-          onClick={goTo("dashboard")}
-        >
-          Dashboard
-        </button>
-        <button
-          type="button"
-          className={`nav-link text-start border-0 py-2 px-3 d-flex align-items-center gap-2 ${
-            activeView === "list" ? "text-white" : "text-dark"
-          }`}
-          style={ activeView === "list" ? { backgroundColor: "#0077b6" } : {} }
-          onClick={goTo("list")}
-        >
-          List
-        </button>
+        {menuItems.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`nav-link text-start border-0 py-2 px-3 d-flex align-items-center gap-2 ${
+              activeView === item.id ? 'text-white' : 'text-dark'
+            }`}
+            style={activeView === item.id ? { backgroundColor: '#0077b6' } : {}}
+            onClick={() => onNavigate(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
       </nav>
     </aside>
-  );
+  )
 }
 
-export default Sidebar;
+export default Sidebar
