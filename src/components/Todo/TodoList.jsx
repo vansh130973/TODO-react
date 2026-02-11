@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import TodoItem from './TodoItem'
 import { getUserTodos, saveUserTodos } from '../../utils/auth'
 import { useToast } from '../../context/useToast'
@@ -36,6 +36,35 @@ function TodoList({ currentUser, dateFormat }) {
   const [editRemainderDate, setEditRemainderDate] = useState('')
 
   const utcMin = utcNowForInput()
+
+  useEffect(() => {
+    const checkAndAutoComplete = () => {
+      const now = new Date()
+      let hasChanges = false
+      
+      const updatedTodos = todos.map(todo => {
+        if (!todo.completed && todo.targetCompleteDate) {
+          const completeDate = new Date(todo.targetCompleteDate)
+          if (completeDate <= now) {
+            hasChanges = true
+            return { ...todo, completed: true, updatedDate: nowUtc() }
+          }
+        }
+        return todo
+      })
+
+      if (hasChanges) {
+        setTodos(updatedTodos)
+        saveUserTodos(currentUser, updatedTodos)
+      }
+    }
+
+    checkAndAutoComplete()
+
+    const interval = setInterval(checkAndAutoComplete, 60000)
+
+    return () => clearInterval(interval)
+  }, [todos, currentUser])
 
   const deleteTodo = (id) => {
     const updatedTodos = todos.filter(todo => todo.id !== id)
@@ -229,7 +258,7 @@ function TodoList({ currentUser, dateFormat }) {
                   
                   <div className="mb-3">
                     <label htmlFor="editCompleteDate" className="form-label">
-                      Complete Date (UTC)
+                      Complete Date
                     </label>
                     <input
                       id="editCompleteDate"
@@ -248,7 +277,7 @@ function TodoList({ currentUser, dateFormat }) {
                   
                   <div className="mb-0">
                     <label htmlFor="editRemainderDate" className="form-label">
-                      Remainder Date (UTC)
+                      Remainder Date
                     </label>
                     <input
                       id="editRemainderDate"
